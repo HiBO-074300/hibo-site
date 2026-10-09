@@ -12,8 +12,8 @@ summary: 从配置身份到 push 授权的完整照抄流程，外加 10 个高�
 ### 第 1 步：配置 Git 身份（只需一次）
 
 ```bash
-git config --global user.name "HiBO-074300"
-git config --global user.email "HiBO-074300@users.noreply.github.com"
+git config --global user.name "你的用户名"
+git config --global user.email "你的邮箱"
 ```
 
 验证：
@@ -29,21 +29,21 @@ git config --global --list
 3. 选 Public 或 Private
 4. ⚠️ 不要勾选 Add README / .gitignore / License（本地已有）
 5. 点 Create repository
-6. 复制仓库地址：`https://github.com/HiBO-074300/wechat-paibantai.git`
+6. 复制仓库地址：`https://github.com/你的用户名/wechat-paibantai.git`
 
 ### 第 3 步：本地初始化 + 关联
 
 ```bash
-cd d:\Desktop\wechat-paibantai
+cd 你的项目目录
 git init
-git remote add origin https://github.com/HiBO-074300/wechat-paibantai.git
+git remote add origin https://github.com/你的用户名/wechat-paibantai.git
 ```
 
 ⚠️ 如果报 `remote origin already exists`：
 
 ```bash
 git remote remove origin
-git remote add origin https://github.com/HiBO-074300/wechat-paibantai.git
+git remote add origin https://github.com/你的用户名/wechat-paibantai.git
 ```
 
 验证：

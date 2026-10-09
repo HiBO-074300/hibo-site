@@ -140,7 +140,7 @@ function readArticle(name) {
     summary: meta && meta.summary ? String(meta.summary).trim() : '',
     category: meta && meta.category ? String(meta.category).trim() : '',
     date: resolveDate(meta, stats),
-    html: parseMarkdown(body),
+    html: parseMarkdown(body, { resolveNote }),
   };
 }
 
@@ -303,6 +303,73 @@ function tools() {
 function siteInfo() {
   const { site, error } = loadConfig();
   return { error, ...site };
+}
+
+/* ==================== [[笔记名]] 双链 ==================== */
+
+/* 文件名（去扩展名、小写）→ 页面地址。带缓存，避免每次渲染都全盘扫描 */
+let wikiCache = { at: 0, map: null };
+const WIKI_TTL = 15000;
+
+function noteIndex() {
+  const now = Date.now();
+  if (wikiCache.map && now - wikiCache.at < WIKI_TTL) return wikiCache.map;
+
+  const map = new Map();
+  const add = (file, url) => {
+    const key = file.replace(/\.(md|markdown)$/i, '').toLowerCase();
+    if (!map.has(key)) map.set(key, url); /* 同名先到先得 */
+  };
+
+  /* content/ 的文章排在最前，同名时优先指向文章页 */
+  try {
+    for (const name of fs.readdirSync(CONTENT_DIR)) {
+      if (/\.(md|markdown)$/i.test(name)) add(name, '/article.html?file=' + encodeURIComponent(name));
+    }
+  } catch {
+    /* 目录不存在就当没有 */
+  }
+
+  const walk = (dir, rel, index, depth) => {
+    if (depth > 12) return;
+
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const e of entries) {
+      if (e.name.startsWith('.')) continue;
+
+      const childRel = relJoin(rel, e.name);
+      if (e.isDirectory()) {
+        walk(path.join(dir, e.name), childRel, index, depth + 1);
+      } else if (e.isFile() && /\.(md|markdown)$/i.test(e.name)) {
+        add(e.name, '/viewer.html?root=' + index + '&path=' + encodeURIComponent(childRel));
+      }
+    }
+  };
+
+  const { sites } = loadConfig();
+  sites.forEach((site, index) => {
+    if (site.kind === 'file') {
+      if (/\.(md|markdown)$/i.test(path.extname(site.abs))) {
+        add(path.basename(site.abs), '/viewer.html?root=' + index + '&path=');
+      }
+    } else if (site.kind === 'dir') {
+      walk(site.abs, '', index, 0);
+    }
+  });
+
+  wikiCache = { at: now, map };
+  return map;
+}
+
+/* 交给 parseMarkdown 的回调：笔记名 → 页面地址，查不到返回空串（原样显示） */
+function resolveNote(name) {
+  return noteIndex().get(String(name).trim().toLowerCase()) || '';
 }
 
 /* 首页「最近更新」：content 的文章 + config.json 各目录里的文件，按修改时间倒序 */
@@ -496,7 +563,7 @@ function viewFile(index, rel) {
       name,
       title: titleFromMeta(meta, name),
       date: resolveDate(meta, fs.statSync(abs)),
-      html: parseMarkdown(body),
+      html: parseMarkdown(body, { resolveNote }),
     };
   }
 

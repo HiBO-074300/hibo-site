@@ -73,6 +73,9 @@ a{color:inherit;}
 .article-body h3{font-size:18px;}
 .article-body p{margin:16px 0;}
 .article-body a{color:var(--accent);}
+/* 双链 [[笔记名]]：虚线下划线，与普通链接区分 */
+.article-body a.wiki{text-decoration:none;border-bottom:1px dashed currentColor;padding-bottom:1px;}
+.article-body a.wiki:hover{border-bottom-style:solid;}
 .article-body ul,.article-body ol{margin:16px 0;padding-left:24px;}
 .article-body li{margin:6px 0;}
 .article-body blockquote{margin:18px 0;padding:12px 16px;background:var(--quote-bg);border-left:4px solid var(--quote-line);color:var(--quote-ink);}
@@ -84,6 +87,10 @@ a{color:inherit;}
 .article-body table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14.5px;}
 .article-body th,.article-body td{border:1px solid var(--line);padding:8px 10px;text-align:left;}
 .article-body th{background:var(--panel-soft);font-weight:600;}
+
+/* ---------- 公式（KaTeX）：字号贴正文，长公式可横向滚动 ---------- */
+.article-body .katex{font-size:1.05em;}
+.article-body .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0 6px;margin:18px 0;}
 
 /* ---------- 全站侧栏布局 ---------- */
 .wrap-wide{max-width:1120px;}
