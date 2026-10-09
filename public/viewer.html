@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>预览 · HiBO</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/theme.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap wrap-wide">
+    <a class="brand" href="/">HiBO</a>
+    <nav class="nav-links">
+      <a href="/">首页</a>
+      <a class="on" href="/files.html">文件库</a>
+      <a href="/tools.html">工具</a>
+      <a href="/about.html">关于</a>
+      <button class="theme-btn" type="button" aria-label="切换明暗主题" title="切换明暗主题"></button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap wrap-wide">
+  <div class="page-layout">
+    <aside class="side" id="side"></aside>
+
+    <div class="page-main">
+      <div class="viewer-bar">
+        <a class="viewer-back" id="back" href="/files.html">← 返回目录</a>
+        <span class="viewer-badge" id="badge" hidden></span>
+        <span class="viewer-name" id="name">正在加载...</span>
+        <a class="viewer-open" id="open" target="_blank" rel="noopener" hidden>新窗口打开</a>
+      </div>
+
+      <div id="body">
+        <p class="list-empty">正在加载...</p>
+      </div>
+
+      <a class="back" id="back-bottom" href="/files.html">← 返回目录</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 HiBO</span>
+    <span>Node · 文件库</span>
+  </div>
+</footer>
+
+<script src="/panel.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const root = params.get('root');
+  const rel = params.get('path') || '';
+
+  /* 回到文件所在目录；配置项本身就是文件时退回一级菜单 */
+  function backHref() {
+    const segs = rel.split('/').filter(Boolean);
+    if (root === null || !segs.length) return '/files.html';
+    segs.pop();
+    return '/files.html?root=' + root + '&path=' + encodeURIComponent(segs.join('/'));
+  }
+
+  function showError(message) {
+    const box = document.getElementById('body');
+    box.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'list-empty';
+    p.textContent = message;
+    box.appendChild(p);
+  }
+
+  function renderMarkdown(data) {
+    const box = document.getElementById('body');
+    box.textContent = '';
+
+    const article = document.createElement('article');
+    article.className = 'article';
+
+    const h1 = document.createElement('h1');
+    h1.textContent = data.title || data.name;
+    article.appendChild(h1);
+
+    if (data.date) {
+      const meta = document.createElement('div');
+      meta.className = 'article-meta';
+      meta.textContent = data.date.slice(0, 10);
+      article.appendChild(meta);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'article-body';
+    body.innerHTML = data.html;
+    article.appendChild(body);
+
+    box.appendChild(article);
+    document.title = (data.title || data.name) + ' · HiBO';
+  }
+
+  function renderFrame(data) {
+    const box = document.getElementById('body');
+    box.textContent = '';
+
+    const frame = document.createElement('iframe');
+    frame.className = 'viewer-frame';
+    frame.src = data.url;
+    frame.title = data.name;
+    box.appendChild(frame);
+
+    const open = document.getElementById('open');
+    open.href = data.url;
+    open.hidden = false;
+
+    const note = document.createElement('p');
+    note.className = 'viewer-note';
+    note.textContent = '内容以原始文件呈现，样式或图片可能因相对路径而缺失，可用「新窗口打开」查看完整效果。';
+    box.appendChild(note);
+  }
+
+  async function load() {
+    const badge = document.getElementById('badge');
+    const name = document.getElementById('name');
+    const back = backHref();
+    document.getElementById('back').href = back;
+    document.getElementById('back-bottom').href = back;
+
+    if (root === null) {
+      showError('缺少参数，请从文件库进入。');
+      return;
+    }
+
+    try {
+      const url = '/api/view?root=' + encodeURIComponent(root) + '&path=' + encodeURIComponent(rel);
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const data = await response.json();
+
+      name.textContent = data.name;
+      const label = data.kind === 'markdown' ? 'MD' : data.kind.toUpperCase();
+      badge.textContent = label;
+      badge.className = 'viewer-badge ' + (data.kind === 'markdown' ? 'md' : data.kind);
+      badge.hidden = false;
+
+      if (data.kind === 'markdown') renderMarkdown(data);
+      else renderFrame(data);
+    } catch (err) {
+      console.error('预览失败:', err);
+      showError('打不开这个文件：' + (rel || root));
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

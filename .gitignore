@@ -1,0 +1,18 @@
+# 运行时产物
+server.log
+server.err
+
+# 依赖（本项目零依赖，保险起见还是挡上）
+node_modules/
+
+# 私有内容：含本机路径与局域网信息，不进公开仓库
+# 需要配置时复制 config.example.json 为 config.json 再改
+config.json
+交接说明.md
+
+# 系统与编辑器
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文章 · HiBO</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/theme.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap wrap-wide">
+    <a class="brand" href="/">HiBO</a>
+    <nav class="nav-links">
+      <a href="/">首页</a>
+      <a href="/files.html">文件库</a>
+      <a href="/tools.html">工具</a>
+      <a href="/about.html">关于</a>
+      <button class="theme-btn" type="button" aria-label="切换明暗主题" title="切换明暗主题"></button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap wrap-wide">
+  <div class="page-layout">
+    <aside class="side" id="side"></aside>
+
+    <div class="page-main">
+      <article class="article" id="article">
+        <p class="list-empty">正在加载...</p>
+      </article>
+      <a class="back" href="/">← 返回首页</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 HiBO</span>
+    <span>Node · Markdown</span>
+  </div>
+</footer>
+
+<script src="/panel.js"></script>
+<script>
+  async function loadArticle() {
+    const box = document.getElementById('article');
+    const file = new URLSearchParams(location.search).get('file');
+
+    if (!file) {
+      box.innerHTML = '<p class="list-empty">缺少 file 参数</p>';
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/article?file=' + encodeURIComponent(file), { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const a = await response.json();
+
+      document.title = a.title + ' · HiBO';
+      const meta = [a.date.slice(0, 10), a.category].filter(Boolean).join(' · ');
+      box.innerHTML = `
+        <h1>${a.title}</h1>
+        <div class="article-meta">${meta}</div>
+        <div class="article-body">${a.html}</div>
+      `;
+      window.scrollTo(0, 0);
+    } catch (err) {
+      console.error('文章加载失败:', err);
+      box.innerHTML = '<p class="list-empty">文章加载失败：' + file + '</p>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadArticle);
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>关于 · HiBO</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/theme.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap wrap-wide">
+    <a class="brand" href="/">HiBO</a>
+    <nav class="nav-links">
+      <a href="/">首页</a>
+      <a href="/files.html">文件库</a>
+      <a href="/tools.html">工具</a>
+      <a class="on" href="/about.html">关于</a>
+      <button class="theme-btn" type="button" aria-label="切换明暗主题" title="切换明暗主题"></button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap wrap-wide">
+  <div class="page-layout">
+    <aside class="side" id="side"></aside>
+
+    <div class="page-main">
+      <section class="hero">
+        <h1>关于</h1>
+        <p>HiBO · 个人站点，用来沉淀技术文章与日常记录</p>
+      </section>
+
+      <div class="section-t">ABOUT</div>
+
+      <div class="article-body">
+        <p>这里是 <strong>HiBO</strong> 的个人展示站点，用来沉淀技术文章与日常记录。</p>
+        <p>文章以 Markdown 文件存放，放在项目的 <code>content/</code> 目录里，网站启动时自动扫描该目录并按时间倒序展示——不需要维护任何索引文件，<strong>把 .md 丢进目录，刷新页面就有</strong>。</p>
+
+        <h2>写文章</h2>
+        <p>在 <code>content/</code> 下新建 <code>.md</code> 文件，开头写一段 front-matter 指定元信息：</p>
+        <pre><code>---
+title: 文章标题
+date: 2026-10-09
+category: 技术文章
+summary: 一句话摘要，会显示在列表页。
+---
+
+正文从这里开始，支持 Markdown 常用语法。</code></pre>
+        <p>文件名建议只用小写字母、数字和连字符（如 <code>2026-10-09-hello.md</code>），中文标题写在 front-matter 的 <code>title</code> 里。这样能避开中文文件名在 URL 里被拦截的老问题。</p>
+        <p><code>date</code> 可以省略，省略时按文件修改时间排序。</p>
+
+        <h2>资料放哪</h2>
+        <p>散装的 PDF、HTML、Markdown 不必转成文章，直接在 <code>config.json</code> 的 <code>sites</code> 里登记目录，文件库会按目录浏览，首页也会把它们按修改时间排进「最近更新」。</p>
+
+        <h2>技术栈</h2>
+        <ul>
+          <li>Node.js 原生 <code>http</code> 模块，零第三方依赖</li>
+          <li>自带轻量 Markdown 解析器（<code>lib/markdown.js</code>）</li>
+          <li>静态页面 + 若干只读接口（文章、文件库、工具、站点信息），不写数据库</li>
+          <li>明暗主题与左侧栏时钟、日历都是纯前端，配置来自 <code>config.json</code></li>
+        </ul>
+      </div>
+
+      <div class="section-t">入口</div>
+
+      <a class="entry entry-dir" href="/">
+        <span class="entry-mark">▸</span>
+        <span class="entry-name">首页</span>
+        <span class="entry-meta">最近更新的 10 条</span>
+      </a>
+      <a class="entry entry-dir" href="/files.html">
+        <span class="entry-mark">▸</span>
+        <span class="entry-name">文件库</span>
+        <span class="entry-meta">按目录浏览 PDF / HTML / MD</span>
+      </a>
+      <a class="entry entry-dir" href="/tools.html">
+        <span class="entry-mark">▸</span>
+        <span class="entry-name">工具</span>
+        <span class="entry-meta">排版台、工作台、工作日志</span>
+      </a>
+
+      <a class="back" href="/">← 返回首页</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 HiBO</span>
+    <span>Node · Markdown</span>
+  </div>
+</footer>
+
+<script src="/panel.js"></script>
+</body>
+</html>

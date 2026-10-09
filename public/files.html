@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文件库 · HiBO</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/theme.js"></script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap wrap-wide">
+    <a class="brand" href="/">HiBO</a>
+    <nav class="nav-links">
+      <a href="/">首页</a>
+      <a class="on" href="/files.html">文件库</a>
+      <a href="/tools.html">工具</a>
+      <a href="/about.html">关于</a>
+      <button class="theme-btn" type="button" aria-label="切换明暗主题" title="切换明暗主题"></button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap wrap-wide">
+  <div class="page-layout">
+    <aside class="side" id="side"></aside>
+
+    <div class="page-main">
+      <section class="hero">
+        <h1 id="page-title">文件库</h1>
+        <p id="page-desc">配置里登记的目录，只展示 PDF、HTML、Markdown</p>
+      </section>
+
+      <nav class="crumbs" id="crumbs" hidden></nav>
+
+      <div id="list">
+        <p class="list-empty">正在加载...</p>
+      </div>
+
+      <a class="back" href="/">← 返回首页</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 HiBO</span>
+    <span>Node · 文件库</span>
+  </div>
+</footer>
+
+<script src="/panel.js"></script>
+<script>
+  const EXT_LABEL = { pdf: 'PDF', html: 'HTML', htm: 'HTML', md: 'MD', markdown: 'MD' };
+  const params = new URLSearchParams(location.search);
+  const rootParam = params.get('root');
+  const pathParam = params.get('path') || '';
+
+  function el(tag, cls, text) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function fmtSize(bytes) {
+    if (!bytes) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function entry(type, mark, name, meta, href) {
+    const node = el(href ? 'a' : 'div', 'entry' + (type ? ' entry-' + type : ''));
+    if (href) node.href = href;
+    node.appendChild(el('span', 'entry-mark', mark));
+    node.appendChild(el('span', 'entry-name', name));
+    node.appendChild(el('span', 'entry-meta', meta));
+    return node;
+  }
+
+  /* 把 htm / markdown 归一成 html / md，样式类只需三种 */
+  function kindOf(ext) {
+    if (ext === 'htm') return 'html';
+    if (ext === 'markdown') return 'md';
+    return ext;
+  }
+
+  /* 一级菜单：配置里的全部根 */
+  async function loadTop() {
+    const list = document.getElementById('list');
+    const response = await fetch('/api/library', { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+
+    list.innerHTML = '';
+    if (data.error) {
+      list.appendChild(el('p', 'list-error', data.error));
+      return;
+    }
+
+    const sites = data.items || [];
+    if (!sites.length) {
+      list.appendChild(el('p', 'list-empty', '还没有可展示的目录，请在 config.json 的 sites 里登记路径。'));
+      return;
+    }
+
+    for (const site of sites) {
+      const href = site.kind === 'dir'
+        ? '/files.html?root=' + site.index + '&path='
+        : site.kind === 'file'
+          ? '/viewer.html?root=' + site.index + '&path='
+          : null;
+
+      let meta;
+      let mark = '';
+      let type = null;
+      if (site.kind === 'missing') {
+        meta = '路径不可用，请检查 config.json';
+      } else if (site.kind === 'file') {
+        type = kindOf(site.ext);
+        mark = EXT_LABEL[site.ext] || '';
+        meta = '单个文件';
+      } else {
+        type = 'dir';
+        mark = '▸';
+        meta = site.dirs + ' 个文件夹 · ' + site.files + ' 个文件';
+      }
+
+      list.appendChild(entry(type, mark, site.name, meta, href));
+    }
+  }
+
+  /* 目录浏览：面包屑 + 子文件夹 + 白名单文件 */
+  async function loadDir() {
+    const list = document.getElementById('list');
+    const url = '/api/browse?root=' + encodeURIComponent(rootParam) + '&path=' + encodeURIComponent(pathParam);
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+
+    document.getElementById('page-title').textContent = data.name;
+    document.getElementById('page-desc').textContent =
+      data.dirs.length + ' 个文件夹 · ' + data.files.length + ' 个文件';
+
+    /* 面包屑：文件库 / 根名 / 子目录… */
+    const crumbs = document.getElementById('crumbs');
+    crumbs.innerHTML = '';
+    const home = el('a', null, '文件库');
+    home.href = '/files.html';
+    crumbs.appendChild(home);
+
+    data.crumbs.forEach((c, i) => {
+      crumbs.appendChild(el('span', 'crumb-sep', '/'));
+      const last = i === data.crumbs.length - 1;
+      if (last) {
+        crumbs.appendChild(el('span', 'crumb-now', c.name));
+      } else {
+        const a = el('a', null, c.name);
+        a.href = '/files.html?root=' + data.root + '&path=' + encodeURIComponent(c.path);
+        crumbs.appendChild(a);
+      }
+    });
+    crumbs.hidden = false;
+
+    list.innerHTML = '';
+    if (!data.dirs.length && !data.files.length) {
+      list.appendChild(el('p', 'list-empty', '这个目录下没有文件夹，也没有 PDF / HTML / Markdown 文件。'));
+      return;
+    }
+
+    for (const dir of data.dirs) {
+      list.appendChild(entry('dir', '▸', dir.name, '文件夹',
+        '/files.html?root=' + data.root + '&path=' + encodeURIComponent(dir.path)));
+    }
+
+    for (const file of data.files) {
+      const date = file.mtime ? file.mtime.slice(0, 10) : '';
+      const meta = [fmtSize(file.size), date].filter(Boolean).join(' · ');
+      list.appendChild(entry(kindOf(file.ext), EXT_LABEL[file.ext] || '', file.name, meta,
+        '/viewer.html?root=' + data.root + '&path=' + encodeURIComponent(file.path)));
+    }
+  }
+
+  async function load() {
+    const list = document.getElementById('list');
+    try {
+      if (rootParam === null) await loadTop();
+      else await loadDir();
+    } catch (err) {
+      console.error('文件库加载失败:', err);
+      list.innerHTML = '';
+      list.appendChild(el('p', 'list-empty', '加载失败，请确认服务已启动（node server.js）。'));
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>
